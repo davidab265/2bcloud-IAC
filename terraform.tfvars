@@ -1,0 +1,5 @@
+name               = "David-Candidate"
+location           = "West Europe"
+vm_admin_username     = "azureuser"
+ssh_public_key_path = "~/.ssh/gitlab2.pub"
+domain              = "yourdomain.com"  
