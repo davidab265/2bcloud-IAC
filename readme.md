@@ -1,6 +1,3 @@
-Here's an updated README file that includes the installation of the Metrics Server, along with the AKS and Helm configurations:
-
----
 
 # Azure DevOps Infrastructure with Jenkins, AKS, NGINX Ingress, Cert Manager, Redis, and Metrics Server
 
@@ -75,15 +72,3 @@ After the AKS cluster is created, Helm is used to deploy:
 3. **Redis Sentinel**: Installed as a high-availability Redis cluster.
 4. **Metrics Server**: Provides resource metrics used by the HPA in AKS.
 
-### Helm Commands
-
-If any Helm release fails, you can investigate and manually install Helm charts using the following commands:
-
-```bash
-helm list -n <namespace>
-helm install <release-name> <chart> --namespace <namespace> --set <values>
-```
-
----
-
-This README provides an overview of the project, its structure, and how to get started. Let me know if you need further adjustments!
