@@ -29,6 +29,15 @@ sudo apt-get install -y git
 git config --global user.name "david"
 git config --global user.email "9200200@gmail.com"
 
+# install Helm
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+
+# install kbuectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
 # start docker
 echo "Starting docker"
 sudo systemctl enable docker
