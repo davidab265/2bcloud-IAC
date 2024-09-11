@@ -6,16 +6,15 @@ This project provisions an Azure DevOps infrastructure using Terraform. The reso
 ## Project Overview
 
 This Terraform project sets up the following resources in Azure:
-1. **Resource Group**: A dedicated resource group for the project.
-2. **Virtual Machine**: An Ubuntu-based Jenkins server with Docker and Git installed.
-3. **Azure Kubernetes Service (AKS)**: A fully managed Kubernetes cluster.
-4. **Azure Container Registry (ACR)**: A private container registry for Docker images.
-5. **NGINX Ingress Controller**: Handles ingress traffic with a static public IP.
-6. **Cert Manager**: Manages certificates (using Helm) with external DNS and workload identity.
-7. **Redis**: Redis Sentinel is installed on the AKS cluster using Helm.
-8. **Metrics Server**: Installed using Helm to enable horizontal pod autoscaling (HPA).
-9. **Key Vault**: Stores sensitive data securely.
-10. **Public IP for NGINX Ingress**: A static public IP for the ingress controller, ensuring that the IP remains even if the ingress service is removed.
+1. **Virtual Machine**: An Ubuntu-based Jenkins server with Docker and Git installed.
+2. **Azure Kubernetes Service (AKS)**: A fully managed Kubernetes cluster.
+3. **Azure Container Registry (ACR)**: A private container registry for Docker images.
+4. **NGINX Ingress Controller**: Handles ingress traffic with a static public IP.
+5. **Cert Manager**: Manages certificates (using Helm) with external DNS and workload identity.
+6. **Redis**: Redis Sentinel is installed on the AKS cluster using Helm.
+7. **Metrics Server**: Installed using Helm to enable horizontal pod autoscaling (HPA).
+8. **Key Vault**: Stores sensitive data securely.
+9. **Public IP for NGINX Ingress**: A static public IP for the ingress controller, ensuring that the IP remains even if the ingress service is removed.
 
 ## Prerequisites
 
@@ -30,15 +29,16 @@ This Terraform project sets up the following resources in Azure:
 - **main.tf**: Defines all the resources, including the AKS cluster, VM, ACR, and key vault.
 - **variables.tf**: Holds the variable definitions for customizable inputs like region, VM size, and AKS node pool configuration.
 - **outputs.tf**: Contains output configurations, such as Jenkins' public IP.
-- **scripts/**: Contains bash scripts for VM provisioning (e.g., installing Jenkins, Docker, and Git).
+- **scripts/**: Contains bash scripts for VM provisioning (installing: Jenkins, Docker, Git, Helm, Kubectl).
 - **helm_release**: Defines the deployment of Helm charts for NGINX Ingress, Cert Manager, Redis, and the Metrics Server.
 
 ## How to Deploy
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/azure-devops-infra.git
-   cd azure-devops-infra
+   git clone https://github.com/davidab265/2bcloud-IAC
+   
+   cd 2bcloud-IAC
    ```
 
 2. Update the `variables.tf` file with your specific values:
