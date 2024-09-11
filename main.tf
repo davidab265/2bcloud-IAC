@@ -188,33 +188,49 @@ resource "azurerm_public_ip" "nginx_ingress_ip" {
 }
 
 
-// NGINX Ingress Controller 
-resource "helm_release" "nginx_ingress" {
-  name       = "nginx-ingress"
-  repository = "https://kubernetes.github.io/ingress-nginx"
-  chart      = "ingress-nginx"
-  version    = "4.11.2"  
+// NGINX Ingress Controller
 
-  namespace  = "nginx-ingress"
-  create_namespace = true
 
-  set {
-    name  = "controller.service.loadBalancerIP"
-    value = azurerm_public_ip.nginx_ingress_ip.ip_address
-  }
-
-  set {
-    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-resource-group"
-    value = var.name
-  }
-
-  set {
-    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-dns-label-name"
-    value = "${var.name}-ingress"
-  }
-
-  depends_on = [azurerm_kubernetes_cluster.aks]
+module "nginx-controller" {
+  source  = "terraform-iaac/nginx-controller/helm"
+  version = "2.3.0"
 }
+
+
+
+module "metrics-server" {
+  source  = "cookielab/metrics-server/kubernetes"
+  version = "0.11.2"
+}
+
+
+
+# resource "helm_release" "nginx_ingress" {
+#   name       = "nginx-ingress"
+#   repository = "https://.github./ingress-nginx"
+#   chart      = "ingress-nginx"
+#   version    = "4.11.2"  
+
+#   namespace  = "nginx-ingress"
+#   create_namespace = true
+
+#   set {
+#     name  = "controller.service.loadBalancerIP"
+#     value = azurerm_public_ip.nginx_ingress_ip.ip_address
+#   }
+
+#   set {
+#     name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-resource-group"
+#     value = var.name
+#   }
+
+#   set {
+#     name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-dns-label-name"
+#     value = "${var.name}-ingress"
+#   }
+
+#   depends_on = [azurerm_kubernetes_cluster.aks]
+# }
 
 
 resource "azurerm_dns_zone" "dns_zone" {
@@ -278,112 +294,33 @@ resource "helm_release" "redis" {
 # // Cert manager & dependencies
 # //**********************************//
 
-# // Cert Manager
-# resource "helm_release" "cert_manager" {
-#   name       = "cert-manager"
-#   repository = "https://charts.jetstack.io"
-#   chart      = "cert-manager"
-#   namespace  = "cert-manager"
-#   version    = "v1.6.3"
 
-#   create_namespace = true
 
-#   set {
-#     name  = "installCRDs"
-#     value = "true"
-#   }
-
-#   set {
-#     name  = "extraArgs[0]"
-#     value = "--issuer-name=letsencrypt-prod"
-#   }
-
-#   depends_on = [
-#     azurerm_kubernetes_cluster.aks
-#   ]
+# module "cert-manager" {
+#   source  = "terraform-iaac/cert-manager/kubernetes"
+#   version = "2.6.4"
+#   cluster_issuer_email = "9200200@gmail.com"
 # }
 
-# // ExternalDNS
-# resource "helm_release" "external_dns" {
-#   name       = "external-dns"
-#   repository = "oci://registry-1.docker.io/bitnamicharts"
-#   chart      = "external-dns"
-#   namespace  = "kube-system"
-#   version    = "8.3.5"
+module "external_dns" {
+  source                = "paul-pfeiffer/external-dns/azurerm"
+  version               = "0.0.1"
+  azure_client_id       = azuread_service_principal.sp.application_id  # application (client) id of service principal
+  azure_object_id       = azuread_service_principal.sp.object_id       # object id of service principal
+  azure_client_secret   = azuread_service_principal_password.sp_pw.value # sp secret
+  azure_tenant_id       = data.azurerm_subscription.current.tenant_id
+  azure_subscription_id = data.azurerm_subscription.current.subscription_id
+  resource_group_name   = "myrg" # 
+  dns_provider          = "azure-private-dns" # currently only azure-private-dns supported
+  set_permission        = true # if set to true permission for the service principal are set 
+  # automatically. This includes reader permission on the resource 
+  # group and private dns zone contributor permission on the private dns zone
+  external_dns_namespace = "external-dns" # defaults to 'default' namespace
 
-#   create_namespace = false
+  domain_filters = [
+    azurerm_private_dns_zone.pdns.name
+  ]
+}
 
-#   set {
-#     name  = "provider"
-#     value = "azure"
-#   }
 
-#   set {
-#     name  = "azure.resourceGroup"
-#     value = var.name
-#   }
 
-#   set {
-#     name  = "azure.tenantId"
-#     value = data.azurerm_client_config.current.tenant_id
-#   }
-
-#   set {
-#     name  = "azure.subscriptionId"
-#     value = data.azurerm_client_config.current.subscription_id
-#   }
-
-#   set {
-#     name  = "azure.aadClientId"
-#     value = var.aad_client_id
-#   }
-
-#   set {
-#     name  = "azure.aadClientSecret"
-#     value = var.aad_client_secret
-#   }
-
-#   depends_on = [
-#     azurerm_kubernetes_cluster.aks
-#   ]
-# }
-
-# // Configure Workload Identity for Cert Manager
-# resource "azurerm_user_assigned_identity" "cert_manager_identity" {
-#   resource_group_name = var.name
-#   location            = var.location
-#   name                = "${var.name}-cert-manager-identity"
-# }
-
-# resource "azurerm_role_assignment" "cert_manager_role" {
-#   principal_id         = azurerm_user_assigned_identity.cert_manager_identity.principal_id
-#   role_definition_name = "Managed Identity Operator"
-#   scope                = data.azurerm_subscription.primary.id
-# }
-
-# resource "kubernetes_service_account" "cert_manager_sa" {
-#   metadata {
-#     name      = "cert-manager-sa"
-#     namespace = "cert-manager"
-#     annotations = {
-#       "azure.workload.identity/client-id" = azurerm_user_assigned_identity.cert_manager_identity.client_id
-#     }
-#   }
-# }
-
-# resource "kubernetes_role_binding" "cert_manager_binding" {
-#   metadata {
-#     name      = "cert-manager-binding"
-#     namespace = "cert-manager"
-#   }
-#   role_ref {
-#     api_group = "rbac.authorization.k8s.io"
-#     kind      = "Role"
-#     name      = "cert-manager-role"
-#   }
-#   subject {
-#     kind      = "ServiceAccount"
-#     name      = kubernetes_service_account.cert_manager_sa.metadata[0].name
-#     namespace = kubernetes_service_account.cert_manager_sa.metadata[0].namespace
-#   }
-# }
